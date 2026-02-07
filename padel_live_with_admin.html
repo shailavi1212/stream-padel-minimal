@@ -1,0 +1,1559 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PADEL LIVE — Match Broadcast</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏓</text></svg>">
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;600;700;800;900&family=Rajdhani:wght@300;400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #06090f;
+  --bg-secondary: #0b1120;
+  --bg-glass: rgba(12, 18, 40, 0.55);
+  --neon-cyan: #00e5ff;
+  --neon-purple: #b44aff;
+  --neon-green: #00ff88;
+  --neon-pink: #ff2d78;
+  --neon-orange: #ff8c00;
+  --neon-yellow: #ffe600;
+  --text-primary: #e4eaf4;
+  --text-secondary: #7889a8;
+  --text-muted: #3a4860;
+  --border-glow: rgba(0, 229, 255, 0.12);
+  --border-subtle: rgba(255, 255, 255, 0.05);
+  --font-display: 'Orbitron', monospace;
+  --font-body: 'Rajdhani', sans-serif;
+  --font-mono: 'Share Tech Mono', monospace;
+  --header-height: 60px;
+  --radius: 8px;
+  --radius-lg: 12px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 16px; scroll-behavior: smooth; }
+body {
+  font-family: var(--font-body); background: var(--bg-primary);
+  color: var(--text-primary); min-height: 100vh; overflow-x: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+body::before {
+  content: ''; position: fixed; inset: 0;
+  background: linear-gradient(rgba(0,229,255,0.025) 1px, transparent 1px),
+              linear-gradient(90deg, rgba(0,229,255,0.025) 1px, transparent 1px);
+  background-size: 50px 50px; pointer-events: none; z-index: 0;
+}
+body::after {
+  content: ''; position: fixed; top: -50%; left: -50%; width: 200%; height: 200%;
+  background: radial-gradient(ellipse at 25% 15%, rgba(0,229,255,0.04) 0%, transparent 55%),
+              radial-gradient(ellipse at 75% 85%, rgba(180,74,255,0.035) 0%, transparent 55%);
+  pointer-events: none; z-index: 0;
+}
+
+/* HEADER */
+.header {
+  position: sticky; top: 0; z-index: 100; height: var(--header-height);
+  display: flex; align-items: center; justify-content: space-between; padding: 0 20px;
+  background: rgba(6,9,15,0.94); backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--border-glow);
+  box-shadow: 0 4px 30px rgba(0,0,0,0.5), 0 1px 0 rgba(0,229,255,0.08);
+}
+.header-left { display: flex; align-items: center; gap: 14px; }
+.logo-icon {
+  width: 36px; height: 36px; border-radius: 8px;
+  background: linear-gradient(135deg, var(--neon-cyan), var(--neon-purple));
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-display); font-weight: 900; font-size: 14px; color: #fff;
+  text-shadow: 0 0 10px rgba(255,255,255,0.5); box-shadow: 0 0 18px rgba(0,229,255,0.3);
+  cursor: pointer; user-select: none;
+}
+.league-name {
+  font-family: var(--font-display); font-size: 1rem; font-weight: 700;
+  letter-spacing: 3px; text-transform: uppercase;
+  background: linear-gradient(90deg, var(--neon-cyan), var(--text-primary));
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.league-subtitle { font-size: 0.65rem; color: var(--text-secondary); letter-spacing: 2px; text-transform: uppercase; }
+.header-center { display: flex; gap: 4px; }
+.nav-tab {
+  font-family: var(--font-display); font-size: 0.6rem; letter-spacing: 2px;
+  text-transform: uppercase; padding: 7px 16px; background: transparent;
+  border: 1px solid transparent; border-radius: 6px; color: var(--text-secondary);
+  cursor: pointer; transition: all 0.3s;
+}
+.nav-tab:hover { color: var(--neon-cyan); border-color: rgba(0,229,255,0.2); background: rgba(0,229,255,0.04); }
+.nav-tab.active { color: var(--neon-cyan); border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.07); }
+.header-right { display: flex; align-items: center; gap: 12px; }
+.live-badge {
+  display: flex; align-items: center; gap: 7px; padding: 5px 12px;
+  border-radius: 20px; background: rgba(255,45,120,0.1); border: 1px solid rgba(255,45,120,0.3);
+}
+.live-dot {
+  width: 8px; height: 8px; border-radius: 50%; background: var(--neon-pink);
+  box-shadow: 0 0 8px var(--neon-pink); animation: livePulse 1.5s ease-in-out infinite;
+}
+@keyframes livePulse {
+  0%,100%{opacity:1;box-shadow:0 0 8px var(--neon-pink)}
+  50%{opacity:0.35;box-shadow:0 0 20px var(--neon-pink),0 0 40px var(--neon-pink)}
+}
+.live-text { font-family: var(--font-display); font-size: 0.6rem; font-weight: 700; letter-spacing: 3px; color: var(--neon-pink); }
+.live-badge.offline .live-dot { background: var(--text-muted); box-shadow: none; animation: none; }
+.live-badge.offline .live-text { color: var(--text-muted); }
+.live-badge.offline { background: rgba(255,255,255,0.03); border-color: var(--border-subtle); }
+.sync-indicator {
+  font-family: var(--font-mono); font-size: 0.6rem; color: var(--text-muted);
+  display: flex; align-items: center; gap: 5px; transition: color 0.3s;
+}
+.sync-indicator.syncing { color: var(--neon-cyan); }
+.sync-indicator.error { color: var(--neon-pink); }
+.sync-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--neon-green); transition: background 0.3s; }
+.sync-indicator.syncing .sync-dot { background: var(--neon-cyan); animation: syncPulse 0.8s ease-in-out infinite; }
+.sync-indicator.error .sync-dot { background: var(--neon-pink); }
+@keyframes syncPulse { 0%,100%{opacity:1}50%{opacity:0.3} }
+
+/* SPONSOR BAR */
+.sponsor-bar {
+  display: flex; align-items: center; justify-content: center; gap: 20px;
+  padding: 8px 20px; background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-subtle);
+}
+.sponsor-label {
+  font-family: var(--font-display); font-size: 0.45rem; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--text-muted);
+}
+.sponsor-logos { display: flex; align-items: center; gap: 18px; }
+.sponsor-logo {
+  height: 32px; max-width: 110px; object-fit: contain; opacity: 0.75;
+  transition: opacity 0.3s; filter: brightness(1.2) grayscale(15%);
+}
+.sponsor-logo:hover { opacity: 1; }
+.sponsor-placeholder {
+  height: 32px; padding: 4px 14px; display: flex; align-items: center; justify-content: center;
+  border: 1px dashed rgba(0,229,255,0.15); border-radius: 6px;
+  font-family: var(--font-display); font-size: 0.5rem; letter-spacing: 2px;
+  color: var(--text-muted); text-transform: uppercase;
+}
+
+/* MAIN */
+.main-container { position: relative; z-index: 1; max-width: 1600px; margin: 0 auto; padding: 16px; }
+.layout-grid { display: grid; grid-template-columns: 280px 1fr 300px; gap: 16px; align-items: start; }
+
+/* CARDS */
+.card {
+  background: var(--bg-glass); backdrop-filter: blur(16px);
+  border: 1px solid var(--border-glow); border-radius: var(--radius-lg);
+  overflow: hidden; transition: border-color 0.3s, box-shadow 0.3s;
+  animation: fadeInUp 0.5s ease forwards;
+}
+.card:hover { border-color: rgba(0,229,255,0.22); box-shadow: 0 0 25px rgba(0,229,255,0.04); }
+@keyframes fadeInUp { from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)} }
+.card-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 12px 16px; border-bottom: 1px solid var(--border-subtle); background: rgba(0,0,0,0.2);
+}
+.card-title { font-family: var(--font-display); font-size: 0.55rem; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; color: var(--neon-cyan); }
+.card-badge {
+  font-family: var(--font-mono); font-size: 0.6rem; padding: 2px 8px; border-radius: 4px;
+  background: rgba(0,229,255,0.08); color: var(--neon-cyan); border: 1px solid rgba(0,229,255,0.12);
+}
+.card-body { padding: 14px 16px; }
+
+/* LEFT */
+.match-info-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.info-label { font-size: 0.6rem; letter-spacing: 2px; text-transform: uppercase; color: var(--text-muted); font-family: var(--font-display); }
+.info-value { font-size: 0.8rem; color: var(--text-secondary); font-weight: 600; }
+.divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border-glow), transparent); margin: 14px 0; }
+.team-row {
+  display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+  border-radius: var(--radius); background: rgba(0,0,0,0.2); margin-bottom: 6px;
+  border: 1px solid transparent; transition: all 0.3s;
+}
+.team-row:hover { border-color: var(--border-glow); }
+.team-letter {
+  width: 32px; height: 32px; display: flex; align-items: center; justify-content: center;
+  border-radius: 6px; font-family: var(--font-display); font-weight: 700; font-size: 0.75rem;
+  background: linear-gradient(135deg, rgba(0,229,255,0.1), rgba(180,74,255,0.1));
+  border: 1px solid rgba(0,229,255,0.15); color: var(--neon-cyan);
+}
+.team-info { flex: 1; }
+.team-name { font-size: 0.8rem; font-weight: 700; color: var(--text-primary); }
+.team-players { font-size: 0.65rem; color: var(--text-secondary); margin-top: 2px; }
+
+/* CENTER (STREAM + SCOREBOARD) */
+.stream-card { margin-bottom: 16px; }
+.stream-wrapper {
+  position: relative; padding-bottom: 56.25%; background: #000;
+  border-bottom: 1px solid var(--border-glow);
+}
+.stream-wrapper iframe {
+  position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0;
+}
+.stream-overlay {
+  position: absolute; top: 0; left: 0; right: 0;
+  padding: 14px 18px; background: linear-gradient(180deg, rgba(0,0,0,0.85) 0%, transparent 100%);
+  display: flex; justify-content: space-between; align-items: flex-start;
+  pointer-events: none; z-index: 10;
+}
+.overlay-team {
+  display: flex; flex-direction: column; align-items: center; gap: 4px;
+}
+.overlay-team-name {
+  font-family: var(--font-display); font-size: 0.7rem; font-weight: 700;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--text-primary);
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+}
+.overlay-score {
+  font-family: var(--font-display); font-size: 1.8rem; font-weight: 900;
+  color: var(--neon-cyan); text-shadow: 0 0 12px rgba(0,229,255,0.6), 0 2px 10px rgba(0,0,0,0.8);
+}
+.scoreboard { margin-top: -1px; }
+.scoreboard table {
+  width: 100%; border-collapse: collapse; table-layout: fixed;
+}
+.scoreboard td, .scoreboard th {
+  padding: 10px 8px; text-align: center; border: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,0.15);
+}
+.scoreboard th {
+  font-family: var(--font-display); font-size: 0.5rem; letter-spacing: 2px;
+  text-transform: uppercase; color: var(--text-muted); font-weight: 600;
+}
+.scoreboard td {
+  font-family: var(--font-mono); font-size: 1.2rem; font-weight: 700;
+  color: var(--text-secondary); transition: all 0.4s;
+}
+.scoreboard td.highlight {
+  background: rgba(0,229,255,0.12); color: var(--neon-cyan);
+  box-shadow: inset 0 0 20px rgba(0,229,255,0.2);
+}
+.team-col {
+  text-align: left; font-family: var(--font-display); font-size: 0.65rem;
+  letter-spacing: 2px; text-transform: uppercase; color: var(--text-primary);
+}
+
+/* RIGHT (STANDINGS + SCHEDULE) */
+.standings-table {
+  width: 100%; border-collapse: collapse; font-size: 0.7rem;
+}
+.standings-table thead th {
+  font-family: var(--font-display); font-size: 0.45rem; letter-spacing: 2px;
+  text-transform: uppercase; text-align: center; padding: 6px 4px;
+  color: var(--text-muted); border-bottom: 1px solid var(--border-subtle);
+}
+.standings-table thead th:nth-child(2) { text-align: left; }
+.standings-table tbody td {
+  padding: 8px 4px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.03);
+  color: var(--text-secondary);
+}
+.standings-table tbody td:nth-child(2) { text-align: left; }
+.standings-table tbody tr:hover { background: rgba(0,229,255,0.03); }
+.standings-table tbody tr.playing { background: rgba(0,229,255,0.05); }
+.standings-table tbody tr.playing td { color: var(--text-primary); }
+.rank-num {
+  display: inline-block; min-width: 18px; font-family: var(--font-display);
+  font-weight: 700; color: var(--text-muted);
+}
+.rank-num.rank-1 { color: var(--neon-yellow); }
+.rank-num.rank-2 { color: var(--text-primary); }
+.rank-num.rank-3 { color: var(--neon-orange); }
+.team-cell { font-weight: 600; color: var(--text-primary); }
+.pts-cell { font-family: var(--font-display); font-weight: 700; color: var(--neon-cyan); }
+.schedule-item {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 10px 12px; border-radius: var(--radius); background: rgba(0,0,0,0.2);
+  border: 1px solid transparent; margin-bottom: 6px; transition: all 0.3s;
+}
+.schedule-item:hover { border-color: var(--border-glow); background: rgba(0,0,0,0.3); }
+.schedule-teams { font-size: 0.7rem; font-weight: 600; color: var(--text-primary); }
+.schedule-meta {
+  font-size: 0.6rem; color: var(--text-secondary); margin-top: 3px;
+  font-family: var(--font-mono);
+}
+.schedule-status {
+  font-family: var(--font-display); font-size: 0.5rem; letter-spacing: 2px;
+  padding: 3px 8px; border-radius: 4px; text-transform: uppercase;
+}
+.status-live {
+  background: rgba(255,45,120,0.15); color: var(--neon-pink); border: 1px solid rgba(255,45,120,0.2);
+}
+.status-upcoming {
+  background: rgba(0,229,255,0.08); color: var(--neon-cyan); border: 1px solid rgba(0,229,255,0.15);
+}
+.status-done {
+  background: rgba(255,255,255,0.03); color: var(--text-muted); border: 1px solid var(--border-subtle);
+}
+
+/* FOOTER */
+.footer {
+  margin-top: 30px; padding: 18px; text-align: center; border-top: 1px solid var(--border-subtle);
+  background: rgba(0,0,0,0.2);
+}
+.footer-text {
+  font-family: var(--font-display); font-size: 0.5rem; letter-spacing: 3px;
+  text-transform: uppercase; color: var(--text-muted);
+}
+
+/* MOBILE */
+@media (max-width: 1024px) {
+  .layout-grid { grid-template-columns: 1fr; }
+  .header-center { display: none; }
+  .mobile-tabs {
+    display: flex; justify-content: space-around; padding: 8px;
+    background: rgba(0,0,0,0.3); border-bottom: 1px solid var(--border-subtle);
+  }
+  .mobile-tab {
+    font-family: var(--font-display); font-size: 0.55rem; letter-spacing: 2px;
+    text-transform: uppercase; padding: 6px 10px; background: transparent;
+    border: 1px solid transparent; border-radius: 6px; color: var(--text-muted);
+    cursor: pointer; transition: all 0.3s;
+  }
+  .mobile-tab.active { color: var(--neon-cyan); border-color: rgba(0,229,255,0.3); background: rgba(0,229,255,0.07); }
+  .panel-section { display: none; }
+  .panel-section.mobile-visible { display: block; }
+}
+
+/* ============================================================
+   🔐 ADMIN PANEL STYLES
+   ============================================================ */
+.admin-panel {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: 380px;
+  max-height: 85vh;
+  background: rgba(12, 18, 40, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(180, 74, 255, 0.3);
+  border-radius: 12px;
+  box-shadow: 0 8px 40px rgba(180, 74, 255, 0.2), 0 0 80px rgba(0, 229, 255, 0.1);
+  z-index: 9999;
+  overflow: hidden;
+  display: none;
+  flex-direction: column;
+  animation: slideInUp 0.4s ease-out;
+}
+
+.admin-panel.visible {
+  display: flex;
+}
+
+.admin-panel.collapsed {
+  height: 56px;
+  max-height: 56px;
+}
+
+@keyframes slideInUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.admin-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  background: rgba(180, 74, 255, 0.08);
+  border-bottom: 1px solid rgba(180, 74, 255, 0.2);
+  cursor: move;
+  user-select: none;
+}
+
+.admin-title {
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--neon-purple);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.admin-title::before {
+  content: '⚡';
+  font-size: 1rem;
+}
+
+.admin-controls {
+  display: flex;
+  gap: 8px;
+}
+
+.admin-btn-icon {
+  width: 28px;
+  height: 28px;
+  border: none;
+  background: rgba(180, 74, 255, 0.1);
+  border: 1px solid rgba(180, 74, 255, 0.2);
+  border-radius: 6px;
+  color: var(--neon-purple);
+  cursor: pointer;
+  transition: all 0.3s;
+  font-size: 0.9rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.admin-btn-icon:hover {
+  background: rgba(180, 74, 255, 0.2);
+  border-color: rgba(180, 74, 255, 0.4);
+  transform: scale(1.05);
+}
+
+.admin-body {
+  overflow-y: auto;
+  overflow-x: hidden;
+  flex: 1;
+  padding: 16px;
+}
+
+.admin-body::-webkit-scrollbar {
+  width: 8px;
+}
+
+.admin-body::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.admin-body::-webkit-scrollbar-thumb {
+  background: rgba(180, 74, 255, 0.3);
+  border-radius: 4px;
+}
+
+.admin-section {
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.admin-section:last-child {
+  border-bottom: none;
+}
+
+.admin-section-title {
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--neon-cyan);
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.admin-input-group {
+  margin-bottom: 12px;
+}
+
+.admin-label {
+  display: block;
+  font-family: var(--font-display);
+  font-size: 0.5rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  margin-bottom: 6px;
+}
+
+.admin-input {
+  width: 100%;
+  padding: 10px 12px;
+  background: rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(0, 229, 255, 0.15);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 0.8rem;
+  transition: all 0.3s;
+}
+
+.admin-input:focus {
+  outline: none;
+  border-color: rgba(0, 229, 255, 0.4);
+  background: rgba(0, 0, 0, 0.4);
+  box-shadow: 0 0 0 3px rgba(0, 229, 255, 0.1);
+}
+
+.admin-input::placeholder {
+  color: var(--text-muted);
+}
+
+.admin-btn-group {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.admin-btn {
+  padding: 10px 14px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 6px;
+  color: var(--neon-cyan);
+  font-family: var(--font-display);
+  font-size: 0.55rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+}
+
+.admin-btn:hover {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: rgba(0, 229, 255, 0.4);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 229, 255, 0.2);
+}
+
+.admin-btn:active {
+  transform: translateY(0);
+}
+
+.admin-btn.danger {
+  background: rgba(255, 45, 120, 0.08);
+  border-color: rgba(255, 45, 120, 0.2);
+  color: var(--neon-pink);
+}
+
+.admin-btn.danger:hover {
+  background: rgba(255, 45, 120, 0.15);
+  border-color: rgba(255, 45, 120, 0.4);
+  box-shadow: 0 4px 12px rgba(255, 45, 120, 0.2);
+}
+
+.admin-btn.success {
+  background: rgba(0, 255, 136, 0.08);
+  border-color: rgba(0, 255, 136, 0.2);
+  color: var(--neon-green);
+}
+
+.admin-btn.success:hover {
+  background: rgba(0, 255, 136, 0.15);
+  border-color: rgba(0, 255, 136, 0.4);
+  box-shadow: 0 4px 12px rgba(0, 255, 136, 0.2);
+}
+
+.admin-btn-wide {
+  grid-column: 1 / -1;
+}
+
+.score-controls {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.score-team {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.score-team-label {
+  font-family: var(--font-display);
+  font-size: 0.5rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+  text-align: center;
+  padding: 6px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+}
+
+.score-btn {
+  padding: 12px;
+  background: rgba(0, 229, 255, 0.08);
+  border: 1px solid rgba(0, 229, 255, 0.2);
+  border-radius: 6px;
+  color: var(--neon-cyan);
+  font-family: var(--font-display);
+  font-size: 0.6rem;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-weight: 600;
+  touch-action: manipulation;
+}
+
+.score-btn:hover {
+  background: rgba(0, 229, 255, 0.15);
+  border-color: rgba(0, 229, 255, 0.4);
+  transform: scale(1.02);
+}
+
+.score-btn:active {
+  transform: scale(0.98);
+}
+
+.admin-footer {
+  padding: 12px 16px;
+  background: rgba(0, 0, 0, 0.3);
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  gap: 8px;
+}
+
+.admin-status {
+  font-family: var(--font-mono);
+  font-size: 0.55rem;
+  color: var(--text-secondary);
+  padding: 8px;
+  background: rgba(0, 0, 0, 0.2);
+  border-radius: 6px;
+  text-align: center;
+  margin-top: 12px;
+}
+
+.admin-status.success {
+  color: var(--neon-green);
+  background: rgba(0, 255, 136, 0.1);
+}
+
+.admin-status.error {
+  color: var(--neon-pink);
+  background: rgba(255, 45, 120, 0.1);
+}
+
+/* Password Modal */
+.admin-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(8px);
+  z-index: 10000;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.admin-modal.visible {
+  display: flex;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.admin-modal-content {
+  background: rgba(12, 18, 40, 0.95);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(180, 74, 255, 0.3);
+  border-radius: 12px;
+  padding: 30px;
+  max-width: 400px;
+  width: 90%;
+  box-shadow: 0 8px 40px rgba(180, 74, 255, 0.3);
+  animation: scaleIn 0.3s ease;
+}
+
+@keyframes scaleIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.admin-modal-title {
+  font-family: var(--font-display);
+  font-size: 0.9rem;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--neon-purple);
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.admin-modal-input {
+  width: 100%;
+  padding: 14px 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: 1px solid rgba(180, 74, 255, 0.3);
+  border-radius: 8px;
+  color: var(--text-primary);
+  font-family: var(--font-body);
+  font-size: 1rem;
+  text-align: center;
+  margin-bottom: 20px;
+  transition: all 0.3s;
+}
+
+.admin-modal-input:focus {
+  outline: none;
+  border-color: rgba(180, 74, 255, 0.6);
+  box-shadow: 0 0 0 4px rgba(180, 74, 255, 0.15);
+}
+
+.admin-modal-buttons {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.admin-modal-btn {
+  padding: 12px;
+  border: 1px solid;
+  border-radius: 8px;
+  font-family: var(--font-display);
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.3s;
+  font-weight: 600;
+}
+
+.admin-modal-btn.primary {
+  background: rgba(180, 74, 255, 0.15);
+  border-color: rgba(180, 74, 255, 0.4);
+  color: var(--neon-purple);
+}
+
+.admin-modal-btn.primary:hover {
+  background: rgba(180, 74, 255, 0.25);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(180, 74, 255, 0.3);
+}
+
+.admin-modal-btn.secondary {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+  color: var(--text-secondary);
+}
+
+.admin-modal-btn.secondary:hover {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+/* Mobile Admin Panel */
+@media (max-width: 768px) {
+  .admin-panel {
+    width: calc(100% - 20px);
+    right: 10px;
+    bottom: 10px;
+    max-height: 80vh;
+  }
+
+  .admin-btn-group {
+    grid-template-columns: 1fr;
+  }
+
+  .score-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .score-btn {
+    padding: 14px;
+    font-size: 0.65rem;
+  }
+}
+
+/* Drag indicator */
+.admin-header::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  transform: translateX(-50%);
+  width: 40px;
+  height: 4px;
+  background: rgba(180, 74, 255, 0.3);
+  border-radius: 2px;
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="header">
+  <div class="header-left">
+    <div class="logo-icon" id="logoIcon">P</div>
+    <div>
+      <div class="league-name">PADEL PRO</div>
+      <div class="league-subtitle">LIVE STREAM</div>
+    </div>
+  </div>
+  <div class="header-center">
+    <button class="nav-tab active" data-tab="match" onclick="switchTab('match')">MATCH</button>
+    <button class="nav-tab" data-tab="standings" onclick="switchTab('standings')">STANDINGS</button>
+    <button class="nav-tab" data-tab="schedule" onclick="switchTab('schedule')">SCHEDULE</button>
+  </div>
+  <div class="header-right">
+    <div class="live-badge" id="liveBadge"><span class="live-dot"></span><span class="live-text">LIVE</span></div>
+    <div class="sync-indicator" id="syncIndicator"><span class="sync-dot"></span><span id="syncText">Synced</span></div>
+  </div>
+</header>
+
+<!-- SPONSOR BAR -->
+<div class="sponsor-bar">
+  <span class="sponsor-label">Powered by</span>
+  <div class="sponsor-logos">
+    <div class="sponsor-placeholder">SPONSOR 1</div>
+    <div class="sponsor-placeholder">SPONSOR 2</div>
+    <div class="sponsor-placeholder">SPONSOR 3</div>
+  </div>
+</div>
+
+<!-- MOBILE TABS -->
+<div class="mobile-tabs">
+  <button class="mobile-tab active" data-mtab="match" onclick="switchMobileTab('match')">MATCH</button>
+  <button class="mobile-tab" data-mtab="details" onclick="switchMobileTab('details')">INFO</button>
+  <button class="mobile-tab" data-mtab="standings" onclick="switchMobileTab('standings')">STANDINGS</button>
+  <button class="mobile-tab" data-mtab="schedule" onclick="switchMobileTab('schedule')">SCHEDULE</button>
+</div>
+
+<!-- MAIN CONTENT -->
+<main class="main-container">
+  <div class="layout-grid">
+    
+    <!-- LEFT PANEL (MATCH INFO) -->
+    <div class="panel-section mobile-visible" data-section="details">
+      <div class="card">
+        <div class="card-header">
+          <span class="card-title">MATCH INFO</span>
+          <span class="card-badge" id="matchRoundBadge">QF</span>
+        </div>
+        <div class="card-body">
+          <div class="match-info-row"><span class="info-label">TOURNAMENT</span><span class="info-value" id="vTournament">—</span></div>
+          <div class="match-info-row"><span class="info-label">ROUND</span><span class="info-value" id="vRound">—</span></div>
+          <div class="match-info-row"><span class="info-label">COURT</span><span class="info-value" id="vCourt">—</span></div>
+          <div class="divider"></div>
+          <div class="team-row">
+            <div class="team-letter">A</div>
+            <div class="team-info">
+              <div class="team-name" id="vTeamAName">—</div>
+              <div class="team-players" id="vPlayersA">—</div>
+            </div>
+          </div>
+          <div class="team-row">
+            <div class="team-letter">B</div>
+            <div class="team-info">
+              <div class="team-name" id="vTeamBName">—</div>
+              <div class="team-players" id="vPlayersB">—</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CENTER PANEL (STREAM + SCOREBOARD) -->
+    <div class="panel-section mobile-visible" data-section="match">
+      <div class="card stream-card">
+        <div class="stream-wrapper">
+          <iframe id="youtubePlayer" src="" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+          <div class="stream-overlay">
+            <div class="overlay-team">
+              <div class="overlay-team-name" id="vOverlayTeamA">TEAM A</div>
+              <div class="overlay-score" id="vOverlayScoreA">0</div>
+            </div>
+            <div class="overlay-team">
+              <div class="overlay-team-name" id="vOverlayTeamB">TEAM B</div>
+              <div class="overlay-score" id="vOverlayScoreB">0</div>
+            </div>
+          </div>
+        </div>
+        <div class="scoreboard">
+          <table>
+            <thead>
+              <tr><th>TEAM</th><th>SET 1</th><th>SET 2</th><th>SET 3</th><th>PTS</th></tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td class="team-col" id="vScoreNameA">A</td>
+                <td id="vs1a">-</td><td id="vs2a">-</td><td id="vs3a">-</td><td id="vptA">-</td>
+              </tr>
+              <tr>
+                <td class="team-col" id="vScoreNameB">B</td>
+                <td id="vs1b">-</td><td id="vs2b">-</td><td id="vs3b">-</td><td id="vptB">-</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT PANEL (STANDINGS + SCHEDULE) -->
+    <div class="panel-section" data-section="standings">
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><span class="card-title">LEAGUE STANDINGS</span></div>
+        <div class="card-body" style="padding:0">
+          <table class="standings-table">
+            <thead><tr><th>#</th><th>TEAM</th><th>P</th><th>W</th><th>L</th><th>PTS</th><th>+/-</th></tr></thead>
+            <tbody id="standingsBody"></tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><span class="card-title">UPCOMING MATCHES</span></div>
+        <div class="card-body" id="scheduleList"><div style="text-align:center;color:var(--text-muted);font-size:0.75rem">Loading...</div></div>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer"><div class="footer-text">PADEL PRO LEAGUE — BROADCAST SYSTEM v2.1 — 2026</div></footer>
+
+<!-- ============================================================
+     🔐 ADMIN PANEL
+     ============================================================ -->
+<div class="admin-panel" id="adminPanel">
+  <div class="admin-header" id="adminHeader">
+    <div class="admin-title">ADMIN CONTROL</div>
+    <div class="admin-controls">
+      <button class="admin-btn-icon" id="adminToggleBtn" title="Collapse">−</button>
+      <button class="admin-btn-icon" id="adminCloseBtn" title="Logout">✕</button>
+    </div>
+  </div>
+  
+  <div class="admin-body" id="adminBody">
+    
+    <!-- Stream Control -->
+    <div class="admin-section">
+      <div class="admin-section-title">🎥 STREAM</div>
+      <div class="admin-input-group">
+        <label class="admin-label">YouTube Embed URL</label>
+        <input type="text" class="admin-input" id="adminStreamURL" placeholder="https://www.youtube.com/embed/...">
+      </div>
+      <div class="admin-btn-group">
+        <button class="admin-btn" onclick="AdminCtrl.updateStream()">Update Stream</button>
+        <button class="admin-btn" onclick="AdminCtrl.previewStream()">Preview</button>
+      </div>
+    </div>
+
+    <!-- Team/Match Info -->
+    <div class="admin-section">
+      <div class="admin-section-title">🏷️ MATCH INFO</div>
+      <div class="admin-input-group">
+        <label class="admin-label">Team A Name</label>
+        <input type="text" class="admin-input" id="adminTeamA" placeholder="Thunder Smash">
+      </div>
+      <div class="admin-input-group">
+        <label class="admin-label">Team B Name</label>
+        <input type="text" class="admin-input" id="adminTeamB" placeholder="Neon Volley">
+      </div>
+      <div class="admin-input-group">
+        <label class="admin-label">Players A</label>
+        <input type="text" class="admin-input" id="adminPlayersA" placeholder="Player 1 • Player 2">
+      </div>
+      <div class="admin-input-group">
+        <label class="admin-label">Players B</label>
+        <input type="text" class="admin-input" id="adminPlayersB" placeholder="Player 3 • Player 4">
+      </div>
+      <div class="admin-input-group">
+        <label class="admin-label">Tournament</label>
+        <input type="text" class="admin-input" id="adminTournament" placeholder="Madrid Open 2026">
+      </div>
+      <div class="admin-input-group">
+        <label class="admin-label">Round</label>
+        <input type="text" class="admin-input" id="adminRound" placeholder="Quarter Final">
+      </div>
+      <div class="admin-input-group">
+        <label class="admin-label">Court</label>
+        <input type="text" class="admin-input" id="adminCourt" placeholder="Center Court">
+      </div>
+    </div>
+
+    <!-- Score Control -->
+    <div class="admin-section">
+      <div class="admin-section-title">📊 SCORE CONTROL</div>
+      <div class="score-controls">
+        <div class="score-team">
+          <div class="score-team-label">TEAM A</div>
+          <button class="score-btn" onclick="AdminCtrl.addPoint('A')">+ Point A</button>
+          <button class="score-btn" onclick="AdminCtrl.removePoint('A')">− Point A</button>
+          <button class="score-btn" onclick="AdminCtrl.addGame('A')">Game A</button>
+          <button class="score-btn" onclick="AdminCtrl.addSet('A')">Set A</button>
+        </div>
+        <div class="score-team">
+          <div class="score-team-label">TEAM B</div>
+          <button class="score-btn" onclick="AdminCtrl.addPoint('B')">+ Point B</button>
+          <button class="score-btn" onclick="AdminCtrl.removePoint('B')">− Point B</button>
+          <button class="score-btn" onclick="AdminCtrl.addGame('B')">Game B</button>
+          <button class="score-btn" onclick="AdminCtrl.addSet('B')">Set B</button>
+        </div>
+      </div>
+      <div class="admin-btn-group" style="margin-top:12px">
+        <button class="admin-btn danger" onclick="AdminCtrl.undoLast()">Undo Last</button>
+        <button class="admin-btn danger" onclick="AdminCtrl.resetMatch()">Reset Match</button>
+      </div>
+    </div>
+
+    <!-- Match Status -->
+    <div class="admin-section">
+      <div class="admin-section-title">⚙️ CONTROLS</div>
+      <div class="admin-btn-group">
+        <button class="admin-btn success admin-btn-wide" onclick="AdminCtrl.saveToSheets()">💾 Save to Sheets</button>
+        <button class="admin-btn" onclick="AdminCtrl.syncNow()">🔄 Sync Now</button>
+        <button class="admin-btn" onclick="AdminCtrl.toggleLive()">⚡ Toggle Live</button>
+      </div>
+      <div class="admin-status" id="adminStatus">Ready</div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Password Modal -->
+<div class="admin-modal" id="adminModal">
+  <div class="admin-modal-content">
+    <h2 class="admin-modal-title">🔐 ADMIN ACCESS</h2>
+    <input type="password" class="admin-modal-input" id="adminPasswordInput" placeholder="Enter password">
+    <div class="admin-modal-buttons">
+      <button class="admin-modal-btn secondary" onclick="AdminAuth.closeModal()">Cancel</button>
+      <button class="admin-modal-btn primary" onclick="AdminAuth.login()">Login</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   🔧 CONFIGURATION — EDIT THESE
+   ============================================================ */
+const CFG = {
+  // Google Sheets ID (from URL: docs.google.com/spreadsheets/d/THIS_PART/edit)
+  SHEET_ID: '1WfKkccUAvyMHOcF-zMXh2kKUTsA1KXwMTwoE7-P05sg',
+
+  // Google API Key (from console.cloud.google.com)
+  API_KEY: 'AIzaSyADRJs4m2Nbn99R0dPBpzp0a7KSeGCRSeo',
+
+  // Sheet tab names
+  MATCH_SHEET: 'Match',
+  STANDINGS_SHEET: 'Standings',
+  SCHEDULE_SHEET: 'Schedule',
+
+  // Sync interval (ms)
+  SYNC_INTERVAL: 3000,
+
+  // Fallback YouTube
+  DEFAULT_YOUTUBE: 'https://www.youtube.com/embed/jfKfPfyJRdk?autoplay=1&mute=1&rel=0',
+
+  // ⚡ ADMIN PASSWORD (CHANGE THIS!)
+  ADMIN_PASSWORD: 'padel2026',
+
+  // Admin session timeout (ms) - 1 hour
+  SESSION_TIMEOUT: 3600000,
+};
+
+/* STATE */
+let prevMatch = {};
+let matchHistory = []; // For undo functionality
+let currentMatchData = {};
+
+/* ============================================================
+   🔐 ADMIN AUTHENTICATION SYSTEM
+   ============================================================ */
+const AdminAuth = {
+  isAuthenticated() {
+    const session = sessionStorage.getItem('admin_auth');
+    const timestamp = sessionStorage.getItem('admin_timestamp');
+    
+    if (!session || !timestamp) return false;
+    
+    // Check if session expired
+    const elapsed = Date.now() - parseInt(timestamp);
+    if (elapsed > CFG.SESSION_TIMEOUT) {
+      this.logout();
+      return false;
+    }
+    
+    return session === 'true';
+  },
+
+  login() {
+    const password = document.getElementById('adminPasswordInput').value;
+    
+    if (password === CFG.ADMIN_PASSWORD) {
+      sessionStorage.setItem('admin_auth', 'true');
+      sessionStorage.setItem('admin_timestamp', Date.now().toString());
+      this.closeModal();
+      this.showPanel();
+      this.loadCurrentData();
+      document.getElementById('adminPasswordInput').value = '';
+    } else {
+      alert('❌ Incorrect password');
+      document.getElementById('adminPasswordInput').value = '';
+    }
+  },
+
+  logout() {
+    sessionStorage.removeItem('admin_auth');
+    sessionStorage.removeItem('admin_timestamp');
+    this.hidePanel();
+  },
+
+  showModal() {
+    document.getElementById('adminModal').classList.add('visible');
+    setTimeout(() => document.getElementById('adminPasswordInput').focus(), 100);
+  },
+
+  closeModal() {
+    document.getElementById('adminModal').classList.remove('visible');
+    document.getElementById('adminPasswordInput').value = '';
+  },
+
+  showPanel() {
+    document.getElementById('adminPanel').classList.add('visible');
+  },
+
+  hidePanel() {
+    document.getElementById('adminPanel').classList.remove('visible');
+  },
+
+  loadCurrentData() {
+    // Load current match data into admin inputs
+    document.getElementById('adminTeamA').value = currentMatchData.TeamA || '';
+    document.getElementById('adminTeamB').value = currentMatchData.TeamB || '';
+    document.getElementById('adminPlayersA').value = currentMatchData.PlayersA || '';
+    document.getElementById('adminPlayersB').value = currentMatchData.PlayersB || '';
+    document.getElementById('adminTournament').value = currentMatchData.Tournament || '';
+    document.getElementById('adminRound').value = currentMatchData.Round || '';
+    document.getElementById('adminCourt').value = currentMatchData.Court || '';
+    document.getElementById('adminStreamURL').value = currentMatchData.StreamURL || '';
+  }
+};
+
+/* ============================================================
+   🎮 ADMIN CONTROL FUNCTIONS
+   ============================================================ */
+const AdminCtrl = {
+  // Update stream URL
+  updateStream() {
+    const url = document.getElementById('adminStreamURL').value.trim();
+    if (!url) {
+      this.showStatus('Please enter a stream URL', 'error');
+      return;
+    }
+    
+    currentMatchData.StreamURL = url;
+    updateMatch(currentMatchData);
+    this.showStatus('Stream updated!', 'success');
+  },
+
+  previewStream() {
+    const url = document.getElementById('adminStreamURL').value.trim();
+    if (url) {
+      window.open(url.replace('/embed/', '/watch?v='), '_blank');
+    }
+  },
+
+  // Point management
+  addPoint(team) {
+    this.saveHistory();
+    const key = `Points${team}`;
+    const current = currentMatchData[key] || '0';
+    
+    // Padel scoring: 0, 15, 30, 40, Game
+    const points = ['0', '15', '30', '40'];
+    const idx = points.indexOf(current);
+    
+    if (idx === -1 || idx === 3) {
+      // Already at 40 or invalid, trigger game
+      this.addGame(team);
+    } else {
+      currentMatchData[key] = points[idx + 1];
+      updateMatch(currentMatchData);
+      this.showStatus(`Point ${team}: ${currentMatchData[key]}`, 'success');
+    }
+  },
+
+  removePoint(team) {
+    this.saveHistory();
+    const key = `Points${team}`;
+    const current = currentMatchData[key] || '0';
+    const points = ['0', '15', '30', '40'];
+    const idx = points.indexOf(current);
+    
+    if (idx > 0) {
+      currentMatchData[key] = points[idx - 1];
+      updateMatch(currentMatchData);
+      this.showStatus(`Point ${team}: ${currentMatchData[key]}`, 'success');
+    }
+  },
+
+  addGame(team) {
+    this.saveHistory();
+    
+    // Determine current set
+    let currentSet = 1;
+    if (currentMatchData.Set1A && currentMatchData.Set1B) currentSet = 2;
+    if (currentMatchData.Set2A && currentMatchData.Set2B) currentSet = 3;
+    
+    const setKey = `Set${currentSet}${team}`;
+    const currentGames = parseInt(currentMatchData[setKey] || '0');
+    currentMatchData[setKey] = (currentGames + 1).toString();
+    
+    // Reset points
+    currentMatchData[`Points${team}`] = '0';
+    const otherTeam = team === 'A' ? 'B' : 'A';
+    currentMatchData[`Points${otherTeam}`] = '0';
+    
+    updateMatch(currentMatchData);
+    this.showStatus(`Game ${team}! (Set ${currentSet}: ${currentMatchData[setKey]})`, 'success');
+  },
+
+  addSet(team) {
+    this.saveHistory();
+    
+    let currentSet = 1;
+    if (currentMatchData.Set1A && currentMatchData.Set1B) currentSet = 2;
+    if (currentMatchData.Set2A && currentMatchData.Set2B) currentSet = 3;
+    
+    // Award set to team
+    const setKeyWin = `Set${currentSet}${team}`;
+    const setKeyLose = `Set${currentSet}${team === 'A' ? 'B' : 'A'}`;
+    
+    currentMatchData[setKeyWin] = '6';
+    currentMatchData[setKeyLose] = currentMatchData[setKeyLose] || '4';
+    
+    // Reset points
+    currentMatchData.PointsA = '0';
+    currentMatchData.PointsB = '0';
+    
+    updateMatch(currentMatchData);
+    this.showStatus(`Set ${currentSet} won by Team ${team}!`, 'success');
+  },
+
+  resetMatch() {
+    if (!confirm('Reset entire match? This cannot be undone.')) return;
+    
+    this.saveHistory();
+    
+    currentMatchData.Set1A = '-';
+    currentMatchData.Set1B = '-';
+    currentMatchData.Set2A = '-';
+    currentMatchData.Set2B = '-';
+    currentMatchData.Set3A = '-';
+    currentMatchData.Set3B = '-';
+    currentMatchData.PointsA = '0';
+    currentMatchData.PointsB = '0';
+    
+    updateMatch(currentMatchData);
+    this.showStatus('Match reset', 'success');
+  },
+
+  undoLast() {
+    if (matchHistory.length === 0) {
+      this.showStatus('Nothing to undo', 'error');
+      return;
+    }
+    
+    const previous = matchHistory.pop();
+    currentMatchData = {...previous};
+    updateMatch(currentMatchData);
+    this.showStatus('Undo successful', 'success');
+  },
+
+  saveHistory() {
+    matchHistory.push({...currentMatchData});
+    // Keep only last 20 actions
+    if (matchHistory.length > 20) {
+      matchHistory.shift();
+    }
+  },
+
+  toggleLive() {
+    this.saveHistory();
+    const current = currentMatchData.MatchLive;
+    currentMatchData.MatchLive = (current === 'TRUE' || current === '1') ? 'FALSE' : 'TRUE';
+    updateMatch(currentMatchData);
+    const status = currentMatchData.MatchLive === 'TRUE' ? 'LIVE' : 'OFFLINE';
+    this.showStatus(`Match status: ${status}`, 'success');
+  },
+
+  async saveToSheets() {
+    this.showStatus('Saving to Google Sheets...', 'success');
+    
+    // Update match info from inputs
+    currentMatchData.TeamA = document.getElementById('adminTeamA').value || currentMatchData.TeamA;
+    currentMatchData.TeamB = document.getElementById('adminTeamB').value || currentMatchData.TeamB;
+    currentMatchData.PlayersA = document.getElementById('adminPlayersA').value || currentMatchData.PlayersA;
+    currentMatchData.PlayersB = document.getElementById('adminPlayersB').value || currentMatchData.PlayersB;
+    currentMatchData.Tournament = document.getElementById('adminTournament').value || currentMatchData.Tournament;
+    currentMatchData.Round = document.getElementById('adminRound').value || currentMatchData.Round;
+    currentMatchData.Court = document.getElementById('adminCourt').value || currentMatchData.Court;
+    
+    updateMatch(currentMatchData);
+    
+    // Note: Actual Google Sheets write requires OAuth2 or Apps Script
+    // For now, save to localStorage as backup
+    try {
+      localStorage.setItem('padel_match_backup', JSON.stringify(currentMatchData));
+      this.showStatus('✅ Saved to local storage (Sheets write requires setup)', 'success');
+    } catch (e) {
+      this.showStatus('❌ Save failed', 'error');
+    }
+  },
+
+  syncNow() {
+    this.showStatus('Syncing...', 'success');
+    syncData();
+  },
+
+  showStatus(message, type = 'success') {
+    const statusEl = document.getElementById('adminStatus');
+    statusEl.textContent = message;
+    statusEl.className = `admin-status ${type}`;
+    
+    setTimeout(() => {
+      statusEl.textContent = 'Ready';
+      statusEl.className = 'admin-status';
+    }, 3000);
+  }
+};
+
+/* ============================================================
+   🎯 ADMIN PANEL UI CONTROLS
+   ============================================================ */
+// Panel dragging
+let isDragging = false;
+let currentX, currentY, initialX, initialY, xOffset = 0, yOffset = 0;
+
+document.getElementById('adminHeader').addEventListener('mousedown', dragStart);
+document.addEventListener('mousemove', drag);
+document.addEventListener('mouseup', dragEnd);
+
+function dragStart(e) {
+  if (e.target.closest('.admin-btn-icon')) return;
+  
+  initialX = e.clientX - xOffset;
+  initialY = e.clientY - yOffset;
+  isDragging = true;
+}
+
+function drag(e) {
+  if (!isDragging) return;
+  
+  e.preventDefault();
+  currentX = e.clientX - initialX;
+  currentY = e.clientY - initialY;
+  
+  xOffset = currentX;
+  yOffset = currentY;
+  
+  const panel = document.getElementById('adminPanel');
+  panel.style.transform = `translate(${currentX}px, ${currentY}px)`;
+}
+
+function dragEnd() {
+  isDragging = false;
+}
+
+// Toggle collapse
+document.getElementById('adminToggleBtn').addEventListener('click', () => {
+  const panel = document.getElementById('adminPanel');
+  const btn = document.getElementById('adminToggleBtn');
+  panel.classList.toggle('collapsed');
+  btn.textContent = panel.classList.contains('collapsed') ? '+' : '−';
+});
+
+// Close/Logout
+document.getElementById('adminCloseBtn').addEventListener('click', () => {
+  if (confirm('Logout from admin panel?')) {
+    AdminAuth.logout();
+  }
+});
+
+// Password input enter key
+document.getElementById('adminPasswordInput').addEventListener('keypress', (e) => {
+  if (e.key === 'Enter') {
+    AdminAuth.login();
+  }
+});
+
+/* ============================================================
+   🔑 ADMIN ACCESS TRIGGERS
+   ============================================================ */
+// Method 1: Ctrl+Shift+A
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+    e.preventDefault();
+    if (!AdminAuth.isAuthenticated()) {
+      AdminAuth.showModal();
+    } else {
+      AdminAuth.showPanel();
+    }
+  }
+});
+
+// Method 2: Click logo 5 times
+let logoClickCount = 0;
+let logoClickTimer;
+
+document.getElementById('logoIcon').addEventListener('click', () => {
+  logoClickCount++;
+  
+  clearTimeout(logoClickTimer);
+  
+  if (logoClickCount === 5) {
+    logoClickCount = 0;
+    if (!AdminAuth.isAuthenticated()) {
+      AdminAuth.showModal();
+    } else {
+      AdminAuth.showPanel();
+    }
+  }
+  
+  logoClickTimer = setTimeout(() => {
+    logoClickCount = 0;
+  }, 2000);
+});
+
+/* ============================================================
+   📡 ORIGINAL VIEWER CODE (UNCHANGED)
+   ============================================================ */
+
+/* SHEETS API */
+function sheetURL(name) {
+  return `https://sheets.googleapis.com/v4/spreadsheets/${CFG.SHEET_ID}/values/${encodeURIComponent(name)}?key=${CFG.API_KEY}`;
+}
+async function fetchSheet(name) {
+  const r = await fetch(sheetURL(name));
+  if (!r.ok) throw new Error(r.status);
+  return (await r.json()).values || [];
+}
+function parseKV(rows) { const d = {}; rows.forEach(r => { if(r[0]) d[r[0]] = r[1]||''; }); return d; }
+function parseTable(rows) {
+  if (rows.length < 2) return [];
+  return rows.slice(1).map(r => ({
+    name:r[0]||'', played:+r[1]||0, wins:+r[2]||0, losses:+r[3]||0,
+    points:+r[4]||0, setDiff:+r[5]||0,
+    playing: (r[6]||'').toString().toUpperCase()==='TRUE'||r[6]==='1'
+  }));
+}
+function parseSchedule(rows) {
+  if (rows.length < 2) return [];
+  return rows.slice(1).map(r => ({ teamA:r[0]||'', teamB:r[1]||'', time:r[2]||'', status:(r[3]||'upcoming').toLowerCase() }));
+}
+
+/* RENDER */
+function $(id) { return document.getElementById(id); }
+function setText(id, v) { const e = $(id); if(e) e.textContent = v; }
+function flash(id) { const e=$(id); if(!e)return; e.classList.remove('highlight'); void e.offsetWidth; e.classList.add('highlight'); }
+
+function updateMatch(d) {
+  // Store in global state
+  currentMatchData = {...d};
+  
+  setText('vTeamAName', d.TeamA||'—'); setText('vTeamBName', d.TeamB||'—');
+  setText('vPlayersA', d.PlayersA||'—'); setText('vPlayersB', d.PlayersB||'—');
+  setText('vScoreNameA', (d.TeamAShort||(d.TeamA||'').substring(0,3)).toUpperCase());
+  setText('vScoreNameB', (d.TeamBShort||(d.TeamB||'').substring(0,3)).toUpperCase());
+  setText('vTournament', d.Tournament||'—'); setText('vRound', d.Round||'—');
+  setText('vCourt', d.Court||'—'); setText('matchRoundBadge', d.RoundShort||'—');
+
+  const fields = ['Set1A','Set1B','Set2A','Set2B','Set3A','Set3B','PointsA','PointsB'];
+  const ids = ['vs1a','vs1b','vs2a','vs2b','vs3a','vs3b','vptA','vptB'];
+  fields.forEach((f,i) => {
+    const v = d[f]!==undefined&&d[f]!=='' ? d[f] : '-';
+    if (prevMatch[f]!==undefined && prevMatch[f]!==v) flash(ids[i]);
+    setText(ids[i], v);
+  });
+
+  setText('vOverlayTeamA', (d.TeamA||'').split(' ')[0]); setText('vOverlayTeamB', (d.TeamB||'').split(' ')[0]);
+  setText('vOverlayScoreA', d.PointsA||'0'); setText('vOverlayScoreB', d.PointsB||'0');
+
+  const yt = d.StreamURL || CFG.DEFAULT_YOUTUBE;
+  const player = $('youtubePlayer');
+  const vid = (yt.match(/embed\/([^?&]+)/)||[])[1]||'';
+  if (player && vid && !player.src.includes(vid)) player.src = yt;
+
+  const live = ['TRUE','1','true'].includes(d.MatchLive);
+  const badge = $('liveBadge');
+  badge.classList.toggle('offline', !live);
+  badge.querySelector('.live-text').textContent = live ? 'LIVE' : 'OFFLINE';
+
+  prevMatch = {...d};
+}
+
+function renderStandings(data) {
+  const s = [...data].sort((a,b) => b.points-a.points || b.setDiff-a.setDiff);
+  $('standingsBody').innerHTML = s.map((t,i) => {
+    const r=i+1, rc=r<=3?` rank-${r}`:'', pc=t.playing?' playing':'';
+    return `<tr class="${pc}"><td><span class="rank-num${rc}">${r}</span></td>
+      <td class="team-cell">${t.name}</td><td>${t.played}</td><td>${t.wins}</td>
+      <td>${t.losses}</td><td class="pts-cell">${t.points}</td>
+      <td>${t.setDiff>0?'+':''}${t.setDiff}</td></tr>`;
+  }).join('');
+}
+
+function renderSchedule(data) {
+  $('scheduleList').innerHTML = data.map(m => {
+    const sc = m.status==='live'?'status-live':m.status==='upcoming'?'status-upcoming':'status-done';
+    return `<div class="schedule-item"><div><div class="schedule-teams">${m.teamA} vs ${m.teamB}</div>
+      <div class="schedule-meta">${m.time}</div></div>
+      <span class="schedule-status ${sc}">${m.status==='live'?'● LIVE':m.status.toUpperCase()}</span></div>`;
+  }).join('') || '<div style="text-align:center;color:var(--text-muted);padding:12px">No schedule</div>';
+}
+
+/* SYNC */
+async function syncData() {
+  const ind=$('syncIndicator'), txt=$('syncText');
+  ind.className='sync-indicator syncing'; txt.textContent='Updating…';
+  try {
+    const [m,s,sc] = await Promise.all([fetchSheet(CFG.MATCH_SHEET),fetchSheet(CFG.STANDINGS_SHEET),fetchSheet(CFG.SCHEDULE_SHEET)]);
+    updateMatch(parseKV(m)); renderStandings(parseTable(s)); renderSchedule(parseSchedule(sc));
+    ind.className='sync-indicator'; txt.textContent='Synced';
+  } catch(e) {
+    console.warn('Sync error:', e);
+    ind.className='sync-indicator error'; txt.textContent='Offline';
+    if (!prevMatch.TeamA) loadFallback();
+  }
+}
+
+function loadFallback() {
+  updateMatch({
+    TeamA:'THUNDER SMASH', TeamB:'NEON VOLLEY', TeamAShort:'THU', TeamBShort:'NEO',
+    PlayersA:'Lebron • Galán', PlayersB:'Coello • Tapia',
+    Tournament:'Madrid Open 2026', Round:'Quarter Final', RoundShort:'QF', Court:'Center Court',
+    Set1A:'6',Set1B:'4',Set2A:'3',Set2B:'5',Set3A:'-',Set3B:'-',PointsA:'30',PointsB:'15',
+    MatchLive:'TRUE', StreamURL:CFG.DEFAULT_YOUTUBE,
+  });
+  renderStandings([
+    {name:'Thunder Smash',played:8,wins:7,losses:1,points:21,setDiff:12,playing:true},
+    {name:'Neon Volley',played:8,wins:6,losses:2,points:18,setDiff:8,playing:true},
+    {name:'Blaze Drive',played:8,wins:5,losses:3,points:15,setDiff:5,playing:false},
+    {name:'Shadow Lob',played:8,wins:4,losses:4,points:12,setDiff:1,playing:false},
+    {name:'Viper Ace',played:8,wins:4,losses:4,points:12,setDiff:-1,playing:false},
+    {name:'Iron Wall',played:8,wins:3,losses:5,points:9,setDiff:-4,playing:false},
+    {name:'Storm Serve',played:8,wins:2,losses:6,points:6,setDiff:-9,playing:false},
+    {name:'Crystal Drop',played:8,wins:1,losses:7,points:3,setDiff:-12,playing:false},
+  ]);
+  renderSchedule([
+    {teamA:'Thunder Smash',teamB:'Neon Volley',time:'NOW',status:'live'},
+    {teamA:'Blaze Drive',teamB:'Shadow Lob',time:'16:00',status:'upcoming'},
+    {teamA:'Viper Ace',teamB:'Iron Wall',time:'18:30',status:'upcoming'},
+  ]);
+}
+
+/* TABS */
+function switchTab(t) { document.querySelectorAll('.nav-tab').forEach(n => n.classList.toggle('active', n.dataset.tab===t)); }
+function switchMobileTab(t) {
+  document.querySelectorAll('.mobile-tab').forEach(n => n.classList.toggle('active', n.dataset.mtab===t));
+  document.querySelectorAll('.panel-section').forEach(s => s.classList.remove('mobile-visible'));
+  const map = {match:'match',details:'details',standings:'standings',schedule:'standings'};
+  const el = document.querySelector(`[data-section="${map[t]}"]`);
+  if (el) el.classList.add('mobile-visible');
+}
+
+// Initialize
+document.addEventListener('DOMContentLoaded', () => { 
+  syncData(); 
+  setInterval(syncData, CFG.SYNC_INTERVAL);
+  
+  // Load backup if exists
+  try {
+    const backup = localStorage.getItem('padel_match_backup');
+    if (backup) {
+      currentMatchData = JSON.parse(backup);
+    }
+  } catch(e) {}
+});
+</script>
+</body>
+</html>
